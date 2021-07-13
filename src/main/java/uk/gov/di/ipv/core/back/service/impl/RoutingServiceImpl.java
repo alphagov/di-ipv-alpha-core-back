@@ -1,13 +1,60 @@
 package uk.gov.di.ipv.core.back.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import uk.gov.di.ipv.core.back.domain.IpvRoute;
+import uk.gov.di.ipv.core.back.domain.SessionData;
 import uk.gov.di.ipv.core.back.restapi.dto.RouteDto;
 import uk.gov.di.ipv.core.back.service.RoutingService;
+import uk.gov.di.ipv.core.back.service.SessionService;
 
+import java.util.UUID;
+
+@Slf4j
 @Service
 public class RoutingServiceImpl implements RoutingService {
+
+    private final SessionService sessionService;
+
+    @Autowired
+    public RoutingServiceImpl(SessionService sessionService) {
+        this.sessionService = sessionService;
+    }
+
     @Override
-    public RouteDto getNextRoute() {
-        return null;
+    public RouteDto getNextRoute(UUID sessionId) {
+        var maybeSessionData = sessionService.getSession(sessionId);
+
+        if (maybeSessionData.isEmpty()) {
+            log.error("Session data is missing, session id: {}", sessionId);
+            throw new RuntimeException("Missing session data");
+        }
+
+        var sessionData = maybeSessionData.get();
+        var nextRoute = getNextFromSessionData(sessionData);
+
+        return new RouteDto(sessionId, nextRoute);
+    }
+
+    private IpvRoute getNextFromSessionData(SessionData sessionData) {
+        if (sessionData.getPreviousRoute() == null) {
+            return IpvRoute.HOME;
+        }
+
+        // TODO: check what answers were provided?
+        //  do we have a passport/driver license,
+        //  pick the routes based on the answers provided
+
+        switch (sessionData.getPreviousRoute()) {
+            case HOME:
+                return IpvRoute.INFORMATION;
+            case INFORMATION:
+                return IpvRoute.PASSPORT;
+            case PASSPORT:
+                return IpvRoute.ORCHESTRATOR;
+        }
+
+        return IpvRoute.ERROR;
     }
 }

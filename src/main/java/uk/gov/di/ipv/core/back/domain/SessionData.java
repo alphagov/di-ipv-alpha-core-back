@@ -7,4 +7,5 @@ import java.util.UUID;
 @Data
 public class SessionData {
     private UUID sessionId;
+    private IpvRoute previousRoute;
 }

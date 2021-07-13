@@ -3,6 +3,7 @@ package uk.gov.di.ipv.core.back.restapi.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -55,13 +56,16 @@ public class IpvController {
             .map(ResponseEntity::ok);
     }
 
-    @GetMapping("/get-route")
-    public Mono<ResponseEntity<RouteDto>> getRoute(UUID sessionId) {
-        return null;
+    @GetMapping("/{session-id}/get-route")
+    public Mono<ResponseEntity<RouteDto>> getRoute(@PathVariable("session-id") UUID sessionId) {
+
+        var route = routingService.getNextRoute(sessionId);
+        return Mono.just(route)
+            .map(ResponseEntity::ok);
     }
 
-    @PostMapping("/add-evidence")
-    public void addEvidence(UUID sessionId, IdentityEvidence identityEvidence) {
+    @PostMapping("/{session-id}/add-evidence")
+    public void addEvidence(@PathVariable("session-id") UUID sessionId, IdentityEvidence identityEvidence) {
         // TODO: Add evidence to session.
         //  return 200 ok, or other statuses.
     }
