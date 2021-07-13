@@ -1,3 +1,6 @@
+redis:
+  endpoint: ${DI_IPV_CORE_BACK_REDIS_ENDPOINT}
+
 gpg45:
   endpoint: ${DI_IPV_CORE_BACK_GPG_45_ENDPOINT}
 
