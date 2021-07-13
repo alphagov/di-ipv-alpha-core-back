@@ -8,10 +8,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 import uk.gov.di.ipv.core.back.domain.data.IdentityEvidence;
-import uk.gov.di.ipv.core.back.restapi.dto.CalculateResponseDto;
 import uk.gov.di.ipv.core.back.restapi.dto.RouteDto;
+import uk.gov.di.ipv.core.back.restapi.dto.SessionDataDto;
 import uk.gov.di.ipv.core.back.service.Gpg45Service;
 import uk.gov.di.ipv.core.back.service.RoutingService;
+import uk.gov.di.ipv.core.back.service.SessionService;
 
 import java.util.UUID;
 
@@ -19,15 +20,18 @@ import java.util.UUID;
 @RequestMapping("/ipv")
 public class IpvController {
 
-    private Gpg45Service gpg45Service;
-    private RoutingService routingService;
+    private final Gpg45Service gpg45Service;
+    private final SessionService sessionService;
+    private final RoutingService routingService;
 
     @Autowired
     public IpvController(
         Gpg45Service gpg45Service,
+        SessionService sessionService,
         RoutingService routingService
     ) {
         this.gpg45Service = gpg45Service;
+        this.sessionService = sessionService;
         this.routingService = routingService;
     }
 
@@ -41,8 +45,14 @@ public class IpvController {
     // IPV front -> ATP front -> IPV front -> IPV back -> ATP back
 
     @GetMapping("/start-session")
-    public Mono<ResponseEntity<UUID>> startNewSession() {
-        return null;
+    public Mono<ResponseEntity<SessionDataDto>> startNewSession() {
+        var sessionId = sessionService.createSession();
+        var dto = SessionDataDto.builder()
+            .sessionId(sessionId)
+            .build();
+
+        return Mono.just(dto)
+            .map(ResponseEntity::ok);
     }
 
     @GetMapping("/get-route")
