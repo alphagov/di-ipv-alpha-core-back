@@ -5,12 +5,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
-import uk.gov.di.ipv.core.back.domain.data.IdentityEvidence;
+import uk.gov.di.ipv.core.back.restapi.dto.EvidenceDto;
 import uk.gov.di.ipv.core.back.restapi.dto.RouteDto;
 import uk.gov.di.ipv.core.back.restapi.dto.SessionDataDto;
+import uk.gov.di.ipv.core.back.restapi.dto.VerificationBundleDto;
+import uk.gov.di.ipv.core.back.service.EvidenceService;
 import uk.gov.di.ipv.core.back.service.Gpg45Service;
 import uk.gov.di.ipv.core.back.service.RoutingService;
 import uk.gov.di.ipv.core.back.service.SessionService;
@@ -24,16 +27,19 @@ public class IpvController {
     private final Gpg45Service gpg45Service;
     private final SessionService sessionService;
     private final RoutingService routingService;
+    private final EvidenceService evidenceService;
 
     @Autowired
     public IpvController(
         Gpg45Service gpg45Service,
         SessionService sessionService,
-        RoutingService routingService
+        RoutingService routingService,
+        EvidenceService evidenceService
     ) {
         this.gpg45Service = gpg45Service;
         this.sessionService = sessionService;
         this.routingService = routingService;
+        this.evidenceService = evidenceService;
     }
 
     // ORC -> IPV Front
@@ -65,8 +71,46 @@ public class IpvController {
     }
 
     @PostMapping("/{session-id}/add-evidence")
-    public void addEvidence(@PathVariable("session-id") UUID sessionId, IdentityEvidence identityEvidence) {
-        // TODO: Add evidence to session.
-        //  return 200 ok, or other statuses.
+    public Mono<ResponseEntity<SessionDataDto>> addEvidence(@PathVariable("session-id") UUID sessionId, @RequestBody EvidenceDto evidenceDto) {
+        var maybeSessionData = sessionService.getSession(sessionId);
+
+        if (maybeSessionData.isEmpty()) {
+            return Mono.just(ResponseEntity.notFound().build());
+        }
+
+        // TODO: create ATP service
+        //  when identity evidence is submitted,
+        //  send the evidence data object to whatever atp
+        //  create the ATP response into identity evidence object
+        //  send identity verification bundle to GPG45
+        //  save session data
+
+        var sessionData = maybeSessionData.get();
+
+        // TODO: Extract these into static functions?
+        //  would neaten things up by calling `.flatMap(SomeService::addEvidenceToBundle)`
+        var sessionDataDto = evidenceService.processEvidence(evidenceDto)
+            .flatMap(identityEvidence -> {
+                sessionData.getIdentityVerificationBundle()
+                    .getIdentityEvidence()
+                    .add(identityEvidence);
+                return Mono.just(sessionData);
+            })
+            .flatMap(session -> {
+                var verificationBundle = new VerificationBundleDto(session.getIdentityVerificationBundle());
+                return gpg45Service.calculate(verificationBundle);
+            })
+            .flatMap(calculateResponseDto -> {
+               var bundle = calculateResponseDto.getIdentityVerificationBundle();
+               var profile = calculateResponseDto.getMatchedIdentityProfile();
+
+               sessionData.setIdentityProfile(profile);
+               sessionData.setIdentityVerificationBundle(bundle);
+               sessionService.saveSession(sessionData);
+
+               return Mono.just(SessionDataDto.fromSessionData(sessionData));
+            });
+
+        return sessionDataDto.map(ResponseEntity::ok);
     }
 }

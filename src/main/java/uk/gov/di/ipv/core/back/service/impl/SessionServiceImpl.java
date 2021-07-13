@@ -9,6 +9,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 import uk.gov.di.ipv.core.back.domain.SessionData;
+import uk.gov.di.ipv.core.back.domain.data.IdentityVerificationBundle;
 import uk.gov.di.ipv.core.back.service.SessionService;
 
 import java.util.Optional;
@@ -34,6 +35,9 @@ public class SessionServiceImpl implements SessionService {
     public UUID createSession() {
         var sessionId = UUID.randomUUID();
         var sessionData = new SessionData();
+        var bundle = new IdentityVerificationBundle();
+
+        sessionData.setIdentityVerificationBundle(bundle);
         var serialized = serializeSessionData(sessionData);
 
         redisClient.set(sessionId.toString(), serialized);
