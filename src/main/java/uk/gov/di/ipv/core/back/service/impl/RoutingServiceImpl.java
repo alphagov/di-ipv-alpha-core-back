@@ -38,7 +38,12 @@ public class RoutingServiceImpl implements RoutingService {
     }
 
     private IpvRoute getNextFromSessionData(SessionData sessionData) {
+        var route = IpvRoute.ERROR;
+
         if (sessionData.getPreviousRoute() == null) {
+            // TODO: duplicate of the below, refactor
+            sessionData.setPreviousRoute(route);
+            sessionService.saveSession(sessionData);
             return IpvRoute.HOME;
         }
 
@@ -48,13 +53,20 @@ public class RoutingServiceImpl implements RoutingService {
 
         switch (sessionData.getPreviousRoute()) {
             case HOME:
-                return IpvRoute.INFORMATION;
+                route = IpvRoute.INFORMATION;
+                break;
             case INFORMATION:
-                return IpvRoute.PASSPORT;
+                route = IpvRoute.PASSPORT;
+                break;
             case PASSPORT:
-                return IpvRoute.ORCHESTRATOR;
+                route = IpvRoute.ORCHESTRATOR;
+                break;
+            default:
+                route = IpvRoute.ERROR;
         }
 
-        return IpvRoute.ERROR;
+        sessionData.setPreviousRoute(route);
+        sessionService.saveSession(sessionData);
+        return route;
     }
 }
