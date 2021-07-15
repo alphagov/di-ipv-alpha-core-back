@@ -34,6 +34,8 @@ public class RoutingServiceImpl implements RoutingService {
         var sessionData = maybeSessionData.get();
         var nextRoute = getNextFromSessionData(sessionData);
 
+        log.info("Serving next route of {} for session {}", nextRoute, sessionId);
+
         return new RouteDto(sessionId, nextRoute);
     }
 

@@ -26,7 +26,6 @@ public class Gpg45ServiceImpl implements Gpg45Service {
 
     @Override
     public Mono<CalculateResponseDto> calculate(VerificationBundleDto identityVerificationBundle) {
-
         return gpg45Client.post()
             .uri("/calculate")
             .bodyValue(identityVerificationBundle)

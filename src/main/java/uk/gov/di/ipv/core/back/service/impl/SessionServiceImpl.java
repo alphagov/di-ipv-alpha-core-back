@@ -38,6 +38,8 @@ public class SessionServiceImpl implements SessionService {
         var sessionData = new SessionData();
         var bundle = new IdentityVerificationBundle();
 
+        log.info("Creating a new session with session id: {}", sessionId);
+
         // TODO: tidy this up
         bundle.setIdentityEvidence(new ArrayList<>());
         sessionData.setSessionId(sessionId);
@@ -60,6 +62,8 @@ public class SessionServiceImpl implements SessionService {
         }
 
         var deserialized = deserializeSessionData(serialized);
+        log.info("Retrieved a session {} from cache", sessionId);
+
         return Optional.of(deserialized);
     }
 
@@ -74,6 +78,8 @@ public class SessionServiceImpl implements SessionService {
 
         var serialized = serializeSessionData(sessionData);
         redisClient.set(sessionId.toString(), serialized);
+
+        log.info("Saved session {} to cache", sessionData.getSessionId());
 
         return sessionId;
     }
