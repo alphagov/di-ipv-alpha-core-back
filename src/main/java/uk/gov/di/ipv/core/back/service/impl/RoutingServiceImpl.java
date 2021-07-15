@@ -38,32 +38,27 @@ public class RoutingServiceImpl implements RoutingService {
     }
 
     private IpvRoute getNextFromSessionData(SessionData sessionData) {
-        var route = IpvRoute.ERROR;
+        var route = IpvRoute.HOME;
 
-        if (sessionData.getPreviousRoute() == null) {
-            // TODO: duplicate of the below, refactor
-            sessionData.setPreviousRoute(route);
-            sessionService.saveSession(sessionData);
-            return IpvRoute.HOME;
-        }
+//        if (sessionData.getPreviousRoute() == null) {
+//            sessionData.setPreviousRoute(route);
+//            sessionService.saveSession(sessionData);
+//            return IpvRoute.HOME;
+//        }
 
-        // TODO: check what answers were provided?
-        //  do we have a passport/driver license,
-        //  pick the routes based on the answers provided
-
-        switch (sessionData.getPreviousRoute()) {
-            case HOME:
-                route = IpvRoute.INFORMATION;
-                break;
-            case INFORMATION:
-                route = IpvRoute.PASSPORT;
-                break;
-            case PASSPORT:
-                route = IpvRoute.ORCHESTRATOR;
-                break;
-            default:
-                route = IpvRoute.ERROR;
-        }
+//        switch (sessionData.getPreviousRoute()) {
+//            case HOME:
+//                route = IpvRoute.INFORMATION;
+//                break;
+//            case INFORMATION:
+//                route = IpvRoute.PASSPORT;
+//                break;
+//            case PASSPORT:
+//                route = IpvRoute.ORCHESTRATOR;
+//                break;
+//            default:
+//                route = IpvRoute.ERROR;
+//        }
 
         sessionData.setPreviousRoute(route);
         sessionService.saveSession(sessionData);

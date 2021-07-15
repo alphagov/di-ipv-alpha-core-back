@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
+import uk.gov.di.ipv.core.back.domain.data.EvidenceType;
 import uk.gov.di.ipv.core.back.domain.data.IdentityEvidence;
 import uk.gov.di.ipv.core.back.restapi.dto.EvidenceDto;
 import uk.gov.di.ipv.core.back.restapi.dto.RouteDto;
@@ -77,9 +78,17 @@ public class IpvController {
 
         var sessionData = maybeSessionData.get();
         var identityEvidence = IdentityEvidence.fromDto(evidenceDto);
+
+        if (identityEvidence.getType().equals(EvidenceType.UK_PASSPORT)) {
+            identityEvidence.getValidityChecks().setAuthoritativeSource("urn:di:ipv:atp-dcs");
+        } else {
+            identityEvidence.getValidityChecks().setAuthoritativeSource("");
+        }
+
         sessionData.getIdentityVerificationBundle()
             .getIdentityEvidence()
             .add(identityEvidence);
+
         var verificationBundle = new VerificationBundleDto(sessionData.getIdentityVerificationBundle());
         var calculateResponseDtoMono = gpg45Service.calculate(verificationBundle);
 

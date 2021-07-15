@@ -6,6 +6,6 @@ import uk.gov.di.ipv.core.back.domain.gpg45.IdentityProfile;
 
 @Data
 public class CalculateResponseDto {
-    private final IdentityVerificationBundle identityVerificationBundle;
-    private final IdentityProfile matchedIdentityProfile;
+    private IdentityVerificationBundle identityVerificationBundle;
+    private IdentityProfile matchedIdentityProfile;
 }

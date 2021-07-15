@@ -1,9 +1,3 @@
-atp:
-  passport:
-    endpoint: ${DI_IPV_CORE_BACK_ATP_PASSPORT_ENDPOINT}
-  generic:
-    endpoint: ${DI_IPV_CORE_BACK_ATP_GENERIC_ENDPOINT}
-
 redis:
   endpoint: ${DI_IPV_CORE_BACK_REDIS_ENDPOINT}
 
