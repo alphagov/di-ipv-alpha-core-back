@@ -2,6 +2,8 @@ package uk.gov.di.ipv.core.back.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.oauth2.sdk.AuthorizationCode;
+import com.nimbusds.oauth2.sdk.AuthorizationRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -33,7 +35,7 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    public UUID createSession() {
+    public UUID createSession(AuthorizationRequest authorizationRequest) {
         var sessionId = UUID.randomUUID();
         var sessionData = new SessionData();
         var bundle = new IdentityVerificationBundle();
@@ -44,6 +46,11 @@ public class SessionServiceImpl implements SessionService {
         bundle.setIdentityEvidence(new ArrayList<>());
         sessionData.setSessionId(sessionId);
         sessionData.setIdentityVerificationBundle(bundle);
+//        sessionData.setAuthorizationRequest(authorizationRequest);
+        sessionData.setRedirectURI(authorizationRequest.getRedirectionURI());
+        sessionData.setScope(authorizationRequest.getScope());
+        sessionData.setState(authorizationRequest.getState());
+        sessionData.setResponseMode(authorizationRequest.getResponseMode());
         var serialized = serializeSessionData(sessionData);
 
         redisClient.set(sessionId.toString(), serialized);
@@ -82,6 +89,30 @@ public class SessionServiceImpl implements SessionService {
         log.info("Saved session {} to cache", sessionData.getSessionId());
 
         return sessionId;
+    }
+
+    @Override
+    public void saveAuthCode(AuthorizationCode code, UUID sessionId) {
+        if (!redisClient.exists(code.getValue())) {
+            log.warn("Key already exists");
+        }
+
+        redisClient.set(code.getValue(), sessionId.toString());
+    }
+
+    @Override
+    public UUID getSessionIdFromCode(String authorizationCode) {
+        return UUID.fromString(redisClient.get(authorizationCode));
+    }
+
+    @Override
+    public void saveAccessToken(String accessToken, UUID sessionID) {
+        redisClient.set(accessToken, sessionID.toString());
+    }
+
+    @Override
+    public SessionData getSessionDataFromAccessToken(String accessToken) {
+        return deserializeSessionData(redisClient.get(accessToken));
     }
 
     private String serializeSessionData(SessionData sessionData) {
