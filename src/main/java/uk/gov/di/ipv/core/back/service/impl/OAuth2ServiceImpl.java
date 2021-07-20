@@ -26,7 +26,6 @@ import com.nimbusds.oauth2.sdk.AuthorizationSuccessResponse;
 import com.nimbusds.oauth2.sdk.ErrorObject;
 import com.nimbusds.oauth2.sdk.GrantType;
 import com.nimbusds.oauth2.sdk.OAuth2Error;
-import com.nimbusds.oauth2.sdk.ResponseType;
 import com.nimbusds.oauth2.sdk.TokenErrorResponse;
 import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.TokenResponse;
@@ -88,21 +87,10 @@ public class OAuth2ServiceImpl implements OAuth2Service {
         var callback = sessionData.getAuthData().getRedirectURI();
         var state = sessionData.getAuthData().getState();
         var responseMode = sessionData.getAuthData().getResponseMode();
-        var responseType = sessionData.getAuthData().getAuthorizationRequest().getResponseType();
-        var providedClientId = sessionData.getAuthData().getAuthorizationRequest().getClientID().getValue();
+        var providedClientId = sessionData.getAuthData().getClientID().getValue();
 
         if (!doesClientIdMatch(providedClientId)) {
             log.warn("Authorization request client id does not match this client id");
-            return new AuthorizationErrorResponse(
-                callback,
-                OAuth2Error.ACCESS_DENIED,
-                state,
-                responseMode
-            );
-        }
-
-        if (!responseType.equals(new ResponseType(ResponseType.Value.CODE))) {
-            log.error("Unsupported authorization response type provided in authorization request");
             return new AuthorizationErrorResponse(
                 callback,
                 OAuth2Error.ACCESS_DENIED,

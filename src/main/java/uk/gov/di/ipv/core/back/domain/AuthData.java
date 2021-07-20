@@ -1,9 +1,9 @@
 package uk.gov.di.ipv.core.back.domain;
 
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
-import com.nimbusds.oauth2.sdk.AuthorizationRequest;
 import com.nimbusds.oauth2.sdk.ResponseMode;
 import com.nimbusds.oauth2.sdk.Scope;
+import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.State;
 import lombok.Data;
 
@@ -15,6 +15,6 @@ public class AuthData {
     private Scope scope;
     private State state;
     private ResponseMode responseMode;
-    private AuthorizationRequest authorizationRequest;
+    private ClientID clientID;
     private AuthorizationCode authorizationCode;
 }

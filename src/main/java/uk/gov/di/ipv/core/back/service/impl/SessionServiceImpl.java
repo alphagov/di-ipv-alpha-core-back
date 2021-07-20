@@ -57,7 +57,7 @@ public class SessionServiceImpl implements SessionService {
         sessionData.setIdentityVerificationBundle(bundle);
 
         var authData = new AuthData();
-        authData.setAuthorizationRequest(authorizationRequest);
+        authData.setClientID(authorizationRequest.getClientID());
         authData.setRedirectURI(authorizationRequest.getRedirectionURI());
         authData.setScope(authorizationRequest.getScope());
         authData.setState(authorizationRequest.getState());
