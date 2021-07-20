@@ -44,6 +44,14 @@ public class EvidenceServiceImpl implements EvidenceService {
             .getIdentityEvidence()
             .add(identityEvidence);
 
+        // mock the bundle scores for now
+        sessionData.getIdentityVerificationBundle().getBundleScores()
+            .setActivityCheckScore(evidenceDto.getBundleScores().getActivityCheckScore());
+        sessionData.getIdentityVerificationBundle().getBundleScores()
+            .setFraudCheckScore(evidenceDto.getBundleScores().getFraudCheckScore());
+        sessionData.getIdentityVerificationBundle().getBundleScores()
+            .setIdentityVerificationScore(evidenceDto.getBundleScores().getIdentityVerificationScore());
+
         log.info(
             "Added new identity evidence {} for session {}",
             identityEvidence.getUuid(),
