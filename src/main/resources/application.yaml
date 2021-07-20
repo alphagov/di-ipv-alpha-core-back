@@ -1,3 +1,8 @@
+ipv:
+  signing:
+    key: ${DI_IPV_CORE_BACK_SIGNING_KEY}
+    cert: ${DI_IPV_CORE_BACK_SIGNING_CERT}
+
 redis:
   endpoint: ${DI_IPV_CORE_BACK_REDIS_ENDPOINT}
 
@@ -9,7 +14,7 @@ logging:
     root: INFO
 
 server:
-  port: ${PORT:8080}
+  port: ${PORT:8081}
   error:
     include-message: always
 

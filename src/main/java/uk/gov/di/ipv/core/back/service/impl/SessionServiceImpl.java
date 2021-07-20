@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
+import uk.gov.di.ipv.core.back.domain.AuthData;
 import uk.gov.di.ipv.core.back.domain.SessionData;
 import uk.gov.di.ipv.core.back.domain.data.IdentityVerificationBundle;
 import uk.gov.di.ipv.core.back.service.SessionService;
@@ -37,24 +38,33 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public UUID createSession(AuthorizationRequest authorizationRequest) {
         var sessionId = UUID.randomUUID();
-        var sessionData = new SessionData();
-        var bundle = new IdentityVerificationBundle();
 
         log.info("Creating a new session with session id: {}", sessionId);
 
-        // TODO: tidy this up
-        bundle.setIdentityEvidence(new ArrayList<>());
+        var sessionData = createNewSessionData(authorizationRequest);
         sessionData.setSessionId(sessionId);
-        sessionData.setIdentityVerificationBundle(bundle);
-//        sessionData.setAuthorizationRequest(authorizationRequest);
-        sessionData.setRedirectURI(authorizationRequest.getRedirectionURI());
-        sessionData.setScope(authorizationRequest.getScope());
-        sessionData.setState(authorizationRequest.getState());
-        sessionData.setResponseMode(authorizationRequest.getResponseMode());
+
         var serialized = serializeSessionData(sessionData);
 
         redisClient.set(sessionId.toString(), serialized);
         return sessionId;
+    }
+
+    private SessionData createNewSessionData(AuthorizationRequest authorizationRequest) {
+        var sessionData = new SessionData();
+        var bundle = new IdentityVerificationBundle();
+        bundle.setIdentityEvidence(new ArrayList<>());
+        sessionData.setIdentityVerificationBundle(bundle);
+
+        var authData = new AuthData();
+        authData.setAuthorizationRequest(authorizationRequest);
+        authData.setRedirectURI(authorizationRequest.getRedirectionURI());
+        authData.setScope(authorizationRequest.getScope());
+        authData.setState(authorizationRequest.getState());
+        authData.setResponseMode(authorizationRequest.getResponseMode());
+        sessionData.setAuthData(authData);
+
+        return sessionData;
     }
 
 
@@ -80,7 +90,6 @@ public class SessionServiceImpl implements SessionService {
 
         if (!redisClient.exists(sessionId.toString())) {
             log.warn("Specified key does not exist, {}", sessionId);
-            // return sessionId; // TODO: do we need to return here with error?
         }
 
         var serialized = serializeSessionData(sessionData);

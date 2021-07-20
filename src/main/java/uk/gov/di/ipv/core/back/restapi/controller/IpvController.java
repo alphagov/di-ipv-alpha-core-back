@@ -17,7 +17,7 @@ import uk.gov.di.ipv.core.back.restapi.dto.EvidenceDto;
 import uk.gov.di.ipv.core.back.restapi.dto.RouteDto;
 import uk.gov.di.ipv.core.back.restapi.dto.SessionDataDto;
 import uk.gov.di.ipv.core.back.service.EvidenceService;
-import uk.gov.di.ipv.core.back.service.OAuthService;
+import uk.gov.di.ipv.core.back.service.OAuth2Service;
 import uk.gov.di.ipv.core.back.service.RoutingService;
 import uk.gov.di.ipv.core.back.service.SessionService;
 
@@ -30,19 +30,19 @@ public class IpvController {
     private final SessionService sessionService;
     private final RoutingService routingService;
     private final EvidenceService evidenceService;
-    private final OAuthService oAuthService;
+    private final OAuth2Service oAuth2Service;
 
     @Autowired
     public IpvController(
         SessionService sessionService,
         RoutingService routingService,
         EvidenceService evidenceService,
-        OAuthService oAuthService
+        OAuth2Service oAuth2Service
     ) {
         this.sessionService = sessionService;
         this.routingService = routingService;
         this.evidenceService = evidenceService;
-        this.oAuthService = oAuthService;
+        this.oAuth2Service = oAuth2Service;
     }
 
     @GetMapping("/start-session")
@@ -66,7 +66,7 @@ public class IpvController {
         }
 
         var sessionData = maybeSessionData.get();
-        var authResponse = oAuthService.doAuthorize(sessionData);
+        var authResponse = oAuth2Service.doAuthorize(sessionData);
 
         return Mono.just(authResponse)
             .map(ResponseEntity::ok);
