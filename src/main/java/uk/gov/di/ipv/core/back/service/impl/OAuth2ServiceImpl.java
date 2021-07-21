@@ -89,15 +89,15 @@ public class OAuth2ServiceImpl implements OAuth2Service {
         var responseMode = sessionData.getAuthData().getResponseMode();
         var providedClientId = sessionData.getAuthData().getClientID().getValue();
 
-        if (!doesClientIdMatch(providedClientId)) {
-            log.warn("Authorization request client id does not match this client id");
-            return new AuthorizationErrorResponse(
-                callback,
-                OAuth2Error.ACCESS_DENIED,
-                state,
-                responseMode
-            );
-        }
+//        if (!doesClientIdMatch(providedClientId)) {
+//            log.warn("Authorization request client id does not match this client id");
+//            return new AuthorizationErrorResponse(
+//                callback,
+//                OAuth2Error.ACCESS_DENIED,
+//                state,
+//                responseMode
+//            );
+//        }
 
         var code = new AuthorizationCode();
         sessionService.saveAuthCode(code, sessionData.getSessionId());
@@ -113,14 +113,15 @@ public class OAuth2ServiceImpl implements OAuth2Service {
 
     @Override
     public TokenResponse exchangeCodeForToken(final TokenRequest tokenRequest) throws JOSEException {
-        if (!tokenRequest.getClientID().toString().equals(clientId.toString())) {
-            log.warn("Authorization request client id does not match this client id");
-            return new TokenErrorResponse(
-                new ErrorObject(
-                    OAuth2Error.ACCESS_DENIED_CODE,
-                    "Client id does not match")
-            );
-        }
+        log.info("This client id: {}, provided client id: {}", clientId.toString(), tokenRequest.getClientID().toString());
+//        if (!tokenRequest.getClientID().toString().equals(clientId.toString())) {
+//            log.warn("Token request client id does not match this client id");
+//            return new TokenErrorResponse(
+//                new ErrorObject(
+//                    OAuth2Error.ACCESS_DENIED_CODE,
+//                    "Client id does not match")
+//            );
+//        }
 
         if (!tokenRequest.getAuthorizationGrant().getType().equals(GrantType.AUTHORIZATION_CODE)) {
             return new TokenErrorResponse(
