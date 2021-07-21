@@ -113,7 +113,7 @@ public class OAuth2ServiceImpl implements OAuth2Service {
 
     @Override
     public TokenResponse exchangeCodeForToken(final TokenRequest tokenRequest) throws JOSEException {
-        if (!tokenRequest.getClientID().equals(clientId)) {
+        if (!tokenRequest.getClientID().toString().equals(clientId.toString())) {
             log.warn("Authorization request client id does not match this client id");
             return new TokenErrorResponse(
                 new ErrorObject(
@@ -211,7 +211,7 @@ public class OAuth2ServiceImpl implements OAuth2Service {
     }
 
     private boolean doesClientIdMatch(final String providedClientId) {
-        return clientId.getValue().equals(providedClientId);
+        return clientId.toString().equals(providedClientId);
     }
 
     private boolean isTokenValid(final AccessToken accessToken) {
