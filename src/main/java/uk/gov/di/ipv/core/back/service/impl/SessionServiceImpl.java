@@ -7,7 +7,6 @@ import com.nimbusds.oauth2.sdk.AuthorizationRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 import uk.gov.di.ipv.core.back.domain.AuthData;
@@ -67,8 +66,6 @@ public class SessionServiceImpl implements SessionService {
         return sessionData;
     }
 
-
-    @Nullable
     @Override
     public Optional<SessionData> getSession(UUID sessionId) {
         var serialized = redisClient.get(sessionId.toString());
