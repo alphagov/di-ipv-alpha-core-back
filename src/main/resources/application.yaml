@@ -4,7 +4,7 @@ ipv:
     cert: ${DI_IPV_CORE_BACK_SIGNING_CERT}
 
 redis:
-  endpoint: ${DI_IPV_CORE_BACK_REDIS_ENDPOINT}
+  endpoint: ${DI_IPV_CORE_BACK_REDIS_ENDPOINT:cfenv}
 
 gpg45:
   endpoint: ${DI_IPV_CORE_BACK_GPG_45_ENDPOINT}

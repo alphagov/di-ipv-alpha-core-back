@@ -27,6 +27,7 @@ dependencies {
     testImplementation 'io.projectreactor:reactor-test'
     implementation "com.nimbusds:oauth2-oidc-sdk:9.3.1"
     implementation 'redis.clients:jedis:3.6.1'
+    implementation 'io.pivotal.cfenv:java-cfenv:2.4.0'
 }
 
 test {

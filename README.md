@@ -25,7 +25,7 @@ Then build or run the service with gradle by either executing `bootRun` task or 
 |-|-|
 | `DI_IPV_CORE_BACK_SIGNING_KEY` | JWS signing key |
 | `DI_IPV_CORE_BACK_SIGNING_CERT` | JWS signing certificate |
-| `DI_IPV_CORE_BACK_REDIS_ENDPOINT` | Redis endpoint URI |
+| `DI_IPV_CORE_BACK_REDIS_ENDPOINT` | Redis endpoint URI, only used if contains localhost for localhost connection, otherwise use VCAP |
 | `DI_IPV_CORE_BACK_GPG_45_ENDPOINT` | GPG-45 service endpoint URI |
 | `PORT` | Port to run this service on (default is 8081) |
 
