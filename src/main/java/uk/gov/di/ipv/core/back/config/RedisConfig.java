@@ -1,11 +1,13 @@
 package uk.gov.di.ipv.core.back.config;
 
 import io.pivotal.cfenv.core.CfEnv;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import redis.clients.jedis.Jedis;
 
+@Slf4j
 @Configuration
 public class RedisConfig {
 
@@ -18,6 +20,7 @@ public class RedisConfig {
     @Bean("redis-client")
     Jedis jedisClient() {
         if (redisEndpoint.contains("localhost")) {
+            log.info("Using local redis session");
             var split = redisEndpoint.split(":");
             return new Jedis(split[0], Integer.parseInt(split[1]));
         }
@@ -28,7 +31,7 @@ public class RedisConfig {
         var redisPort = cfEnv.findCredentialsByName("session-cache").getPort();
         var redisPassword = cfEnv.findCredentialsByName("session-cache").getPassword();
 
-        var client = new Jedis(redisHost, Integer.parseInt(redisPort));
+        var client = new Jedis(redisHost, Integer.parseInt(redisPort), true);
 
         if (redisPassword != null) {
             client.auth(redisPassword);
