@@ -1,0 +1,40 @@
+ipv:
+  signing:
+    key: ${DI_IPV_CORE_BACK_SIGNING_KEY}
+    cert: ${DI_IPV_CORE_BACK_SIGNING_CERT}
+
+redis:
+  endpoint: ${DI_IPV_CORE_BACK_REDIS_ENDPOINT:cfenv}
+
+gpg45:
+  endpoint: ${DI_IPV_CORE_BACK_GPG_45_ENDPOINT}
+
+logging:
+  level:
+    root: INFO
+
+server:
+  port: ${PORT:8081}
+  error:
+    include-message: always
+
+management:
+  endpoint:
+    health:
+      show-details: "always"
+      status:
+        http-mapping:
+          UP: 200
+          DOWN: 503
+  endpoints:
+    web:
+      base-path: /
+      exposure:
+        include: health
+
+
+spring:
+  application:
+    name: IPV Core Back
+  main:
+    banner-mode: off
