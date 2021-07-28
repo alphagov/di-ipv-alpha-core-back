@@ -9,9 +9,13 @@ import uk.gov.di.ipv.core.back.domain.data.IdentityEvidence;
 import uk.gov.di.ipv.core.back.restapi.dto.EvidenceDto;
 import uk.gov.di.ipv.core.back.restapi.dto.SessionDataDto;
 import uk.gov.di.ipv.core.back.restapi.dto.VerificationBundleDto;
+import uk.gov.di.ipv.core.back.service.AttributeCollectionService;
 import uk.gov.di.ipv.core.back.service.EvidenceService;
 import uk.gov.di.ipv.core.back.service.Gpg45Service;
 import uk.gov.di.ipv.core.back.service.SessionService;
+
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -19,13 +23,16 @@ public class EvidenceServiceImpl implements EvidenceService {
 
     private final Gpg45Service gpg45Service;
     private final SessionService sessionService;
+    private final AttributeCollectionService attributeCollectionService;
 
     public EvidenceServiceImpl(
         Gpg45Service gpg45Service,
-        SessionService sessionService
+        SessionService sessionService,
+        AttributeCollectionService attributeCollectionService
     ) {
         this.gpg45Service = gpg45Service;
         this.sessionService = sessionService;
+        this.attributeCollectionService = attributeCollectionService;
     }
 
     @Override
@@ -52,6 +59,8 @@ public class EvidenceServiceImpl implements EvidenceService {
         sessionData.getIdentityVerificationBundle().getBundleScores()
             .setIdentityVerificationScore(evidenceDto.getBundleScores().getIdentityVerificationScore());
 
+        updateAttributesInSession(sessionData, identityEvidence);
+
         log.info(
             "Added new identity evidence {} for session {}",
             identityEvidence.getUuid(),
@@ -70,6 +79,22 @@ public class EvidenceServiceImpl implements EvidenceService {
             sessionService.saveSession(sessionData);
 
             return Mono.just(SessionDataDto.fromSessionData(sessionData));
+        });
+    }
+
+    private void updateAttributesInSession(SessionData sessionData, IdentityEvidence identityEvidence) {
+        var collectedAttributes = attributeCollectionService.collectAttributesFromEvidence(identityEvidence);
+        var currentAttributes = sessionData.getCollectedAttributes();
+        collectedAttributes.forEach((collectedAttributeName, collectedValue) -> {
+            var combined = currentAttributes.compute(collectedAttributeName, (currentAttribute, currentValue) -> {
+                // combine collected attribute values together
+                if (currentValue == null) {
+                    return collectedValue;
+                }
+                return Stream.concat(currentValue.stream(), collectedValue.stream()).collect(Collectors.toList());
+            });
+
+            currentAttributes.replace(collectedAttributeName, combined);
         });
     }
 }

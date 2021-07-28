@@ -8,6 +8,7 @@ import com.nimbusds.oauth2.sdk.id.State;
 import lombok.Data;
 
 import java.net.URI;
+import java.util.List;
 
 @Data
 public class AuthData {
@@ -17,4 +18,5 @@ public class AuthData {
     private ResponseMode responseMode;
     private ClientID clientID;
     private AuthorizationCode authorizationCode;
+    private List<String> requestedAttributes;
 }

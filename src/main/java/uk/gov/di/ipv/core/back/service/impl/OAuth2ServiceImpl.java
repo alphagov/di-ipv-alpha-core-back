@@ -1,5 +1,8 @@
 package uk.gov.di.ipv.core.back.service.impl;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -33,15 +36,22 @@ import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
+import com.nimbusds.openid.connect.sdk.claims.ClaimsSetRequest;
+import com.nimbusds.openid.connect.sdk.claims.ClaimsTransport;
 import lombok.extern.slf4j.Slf4j;
 import net.minidev.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import uk.gov.di.ipv.core.back.domain.AttributeName;
+import uk.gov.di.ipv.core.back.domain.CustomClaims;
 import uk.gov.di.ipv.core.back.domain.SessionData;
+import uk.gov.di.ipv.core.back.domain.data.EvidenceType;
+import uk.gov.di.ipv.core.back.domain.data.IdentityEvidence;
 import uk.gov.di.ipv.core.back.restapi.dto.UserInfoDto;
 import uk.gov.di.ipv.core.back.service.OAuth2Service;
 import uk.gov.di.ipv.core.back.service.SessionService;
+import uk.gov.di.ipv.core.back.util.ClaimsUtil;
 
 import java.security.Key;
 import java.security.PrivateKey;
@@ -50,9 +60,14 @@ import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -190,13 +205,60 @@ public class OAuth2ServiceImpl implements OAuth2Service {
     }
 
     private UserInfoDto createUserInfoResponse(SessionData sessionData) {
-        return UserInfoDto.builder()
-            .issuer(issuerUrn)
-            .audience(orchestratorUrn)
-            .subject(orchestratorUrn)
-            .identityProfile(sessionData.getIdentityProfile())
-            .identityVerificationBundle(sessionData.getIdentityVerificationBundle())
-            .build();
+
+        // TODO: Check if requested any claims,
+        //  if not, then return only the identity profile,
+        //  if yes, then return identity profile + attributes
+        var userInfo = getDefaultUserInfo(sessionData);
+        var aggregatedAttributes = aggregateAttributes(sessionData);
+        aggregatedAttributes.ifPresent(userInfo::putAll);
+
+//        var objMapper = new ObjectMapper();
+//        objMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+//        String json = objMapper.writeValueAsString(userInfo);
+        return new UserInfoDto(userInfo);
+    }
+
+    private Map<String, Object> getDefaultUserInfo(SessionData sessionData) {
+        var userInfo = new HashMap<String, Object>();
+
+        userInfo.put("iss", issuerUrn);
+        userInfo.put("aud", orchestratorUrn);
+        userInfo.put("sub", orchestratorUrn);
+        userInfo.put("identityProfile", sessionData.getIdentityProfile());
+        userInfo.put("requestedLevelOfConfidence", sessionData.getRequestedLevelOfConfidence().toString());
+
+        return userInfo;
+    }
+
+    private Optional<Map<String, Object>> aggregateAttributes(SessionData sessionData) {
+        ClaimsSetRequest claimsSetRequest;
+
+        try {
+            claimsSetRequest = ClaimsUtil.getClaimsSetRequest(sessionData);
+        } catch (com.nimbusds.oauth2.sdk.ParseException parseException) {
+            parseException.printStackTrace();
+            return Optional.empty();
+        }
+
+        var aggregatedAttributes = new HashMap<String, Object>();
+
+        claimsSetRequest.get("userinfo", null).getAdditionalInformation().forEach((additionalInfo, _val) -> {
+            var attribute = AttributeName.fromString(additionalInfo);
+
+            if (attribute == null) {
+                //TODO: Throw error
+                return;
+            }
+
+            var collectedAttributeValue = sessionData.getCollectedAttributes().get(attribute);
+            if (collectedAttributeValue != null && !collectedAttributeValue.isEmpty()) {
+                // /userinfo should only return populated attributes
+                aggregatedAttributes.put(attribute.toString(), sessionData.getCollectedAttributes().get(attribute));
+            }
+        });
+
+        return Optional.of(aggregatedAttributes);
     }
 
     private JSONObject createJwsPayload() {
