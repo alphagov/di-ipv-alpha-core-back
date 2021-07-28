@@ -18,5 +18,4 @@ public class SessionData {
     private AuthData authData;
     private ConfidenceLevel requestedLevelOfConfidence;
     private Map<AttributeName, List<String>> collectedAttributes;
-//    private Profile profile;
 }

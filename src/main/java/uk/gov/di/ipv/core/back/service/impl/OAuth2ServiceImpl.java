@@ -1,8 +1,5 @@
 package uk.gov.di.ipv.core.back.service.impl;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -23,12 +20,10 @@ import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import com.nimbusds.oauth2.sdk.AccessTokenResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
-import com.nimbusds.oauth2.sdk.AuthorizationErrorResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationSuccessResponse;
 import com.nimbusds.oauth2.sdk.ErrorObject;
 import com.nimbusds.oauth2.sdk.GrantType;
-import com.nimbusds.oauth2.sdk.OAuth2Error;
 import com.nimbusds.oauth2.sdk.TokenErrorResponse;
 import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.TokenResponse;
@@ -37,17 +32,13 @@ import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
 import com.nimbusds.openid.connect.sdk.claims.ClaimsSetRequest;
-import com.nimbusds.openid.connect.sdk.claims.ClaimsTransport;
 import lombok.extern.slf4j.Slf4j;
 import net.minidev.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import uk.gov.di.ipv.core.back.domain.AttributeName;
-import uk.gov.di.ipv.core.back.domain.CustomClaims;
 import uk.gov.di.ipv.core.back.domain.SessionData;
-import uk.gov.di.ipv.core.back.domain.data.EvidenceType;
-import uk.gov.di.ipv.core.back.domain.data.IdentityEvidence;
 import uk.gov.di.ipv.core.back.restapi.dto.UserInfoDto;
 import uk.gov.di.ipv.core.back.service.OAuth2Service;
 import uk.gov.di.ipv.core.back.service.SessionService;
@@ -60,14 +51,12 @@ import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -205,17 +194,10 @@ public class OAuth2ServiceImpl implements OAuth2Service {
     }
 
     private UserInfoDto createUserInfoResponse(SessionData sessionData) {
-
-        // TODO: Check if requested any claims,
-        //  if not, then return only the identity profile,
-        //  if yes, then return identity profile + attributes
         var userInfo = getDefaultUserInfo(sessionData);
         var aggregatedAttributes = aggregateAttributes(sessionData);
         aggregatedAttributes.ifPresent(userInfo::putAll);
 
-//        var objMapper = new ObjectMapper();
-//        objMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-//        String json = objMapper.writeValueAsString(userInfo);
         return new UserInfoDto(userInfo);
     }
 
@@ -237,7 +219,7 @@ public class OAuth2ServiceImpl implements OAuth2Service {
         try {
             claimsSetRequest = ClaimsUtil.getClaimsSetRequest(sessionData);
         } catch (com.nimbusds.oauth2.sdk.ParseException parseException) {
-            parseException.printStackTrace();
+            log.error("Could not parse claims set request", parseException);
             return Optional.empty();
         }
 

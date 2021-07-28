@@ -51,14 +51,7 @@ public class EvidenceServiceImpl implements EvidenceService {
             .getIdentityEvidence()
             .add(identityEvidence);
 
-        // mock the bundle scores for now
-        sessionData.getIdentityVerificationBundle().getBundleScores()
-            .setActivityCheckScore(evidenceDto.getBundleScores().getActivityCheckScore());
-        sessionData.getIdentityVerificationBundle().getBundleScores()
-            .setFraudCheckScore(evidenceDto.getBundleScores().getFraudCheckScore());
-        sessionData.getIdentityVerificationBundle().getBundleScores()
-            .setIdentityVerificationScore(evidenceDto.getBundleScores().getIdentityVerificationScore());
-
+        mockBundleScores(sessionData, evidenceDto);
         updateAttributesInSession(sessionData, identityEvidence);
 
         log.info(
@@ -96,5 +89,15 @@ public class EvidenceServiceImpl implements EvidenceService {
 
             currentAttributes.replace(collectedAttributeName, combined);
         });
+    }
+
+    private void mockBundleScores(SessionData sessionData, EvidenceDto evidenceDto) {
+        // mock the bundle scores for now
+        sessionData.getIdentityVerificationBundle().getBundleScores()
+            .setActivityCheckScore(evidenceDto.getBundleScores().getActivityCheckScore());
+        sessionData.getIdentityVerificationBundle().getBundleScores()
+            .setFraudCheckScore(evidenceDto.getBundleScores().getFraudCheckScore());
+        sessionData.getIdentityVerificationBundle().getBundleScores()
+            .setIdentityVerificationScore(evidenceDto.getBundleScores().getIdentityVerificationScore());
     }
 }
