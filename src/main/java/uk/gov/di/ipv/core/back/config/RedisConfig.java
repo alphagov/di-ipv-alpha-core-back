@@ -19,10 +19,15 @@ public class RedisConfig {
 
     @Bean("redis-client")
     Jedis jedisClient() {
-        if (redisEndpoint.contains("localhost")) {
+        if (!redisEndpoint.contains("cfenv")) {
             log.info("Using local redis session");
             var split = redisEndpoint.split(":");
-            return new Jedis(split[0], Integer.parseInt(split[1]));
+
+            if (split.length == 2) {
+                return new Jedis(split[0], Integer.parseInt(split[1]));
+            }
+
+            return new Jedis(redisEndpoint, 6379);
         }
 
         // If not using localhost, use cf env to grab the VCAP service
