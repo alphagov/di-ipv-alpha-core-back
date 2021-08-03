@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uk.gov.di.ipv.core.back.domain.AttributeName;
+import uk.gov.di.ipv.core.back.domain.SessionData;
 import uk.gov.di.ipv.core.back.domain.data.IdentityEvidence;
 import uk.gov.di.ipv.core.back.service.AttributeCollectionService;
 
@@ -12,6 +13,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class AttributeCollectionServiceImpl implements AttributeCollectionService {
@@ -41,5 +44,22 @@ public class AttributeCollectionServiceImpl implements AttributeCollectionServic
         });
 
         return collectedAttributes;
+    }
+
+    @Override
+    public void updateAttributesInSession(SessionData sessionData, IdentityEvidence identityEvidence) {
+        var collectedAttributes = collectAttributesFromEvidence(identityEvidence);
+        var currentAttributes = sessionData.getCollectedAttributes();
+        collectedAttributes.forEach((collectedAttributeName, collectedValue) -> {
+            var combined = currentAttributes.compute(collectedAttributeName, (currentAttribute, currentValue) -> {
+                // combine collected attribute values together
+                if (currentValue == null) {
+                    return collectedValue;
+                }
+                return Stream.concat(currentValue.stream(), collectedValue.stream()).collect(Collectors.toList());
+            });
+
+            currentAttributes.replace(collectedAttributeName, combined);
+        });
     }
 }

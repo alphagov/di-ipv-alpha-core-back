@@ -6,6 +6,8 @@ import reactor.core.publisher.Mono;
 import uk.gov.di.ipv.core.back.domain.SessionData;
 import uk.gov.di.ipv.core.back.domain.data.EvidenceType;
 import uk.gov.di.ipv.core.back.domain.data.IdentityEvidence;
+import uk.gov.di.ipv.core.back.domain.data.IdentityVerificationBundle;
+import uk.gov.di.ipv.core.back.restapi.dto.CalculateResponseDto;
 import uk.gov.di.ipv.core.back.restapi.dto.EvidenceDto;
 import uk.gov.di.ipv.core.back.restapi.dto.SessionDataDto;
 import uk.gov.di.ipv.core.back.restapi.dto.VerificationBundleDto;
@@ -13,9 +15,6 @@ import uk.gov.di.ipv.core.back.service.AttributeCollectionService;
 import uk.gov.di.ipv.core.back.service.EvidenceService;
 import uk.gov.di.ipv.core.back.service.Gpg45Service;
 import uk.gov.di.ipv.core.back.service.SessionService;
-
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -41,18 +40,15 @@ public class EvidenceServiceImpl implements EvidenceService {
 
         log.info("Adding new evidence for session {}", sessionData.getSessionId());
 
-        if (identityEvidence.getType().equals(EvidenceType.UK_PASSPORT)) {
-            identityEvidence.getValidityChecks().setAuthoritativeSource("urn:di:ipv:atp-dcs");
-        } else {
-            identityEvidence.getValidityChecks().setAuthoritativeSource("");
-        }
+        var authoritativeSource = getAuthoritativeSource(identityEvidence);
+        identityEvidence.getValidityChecks().setAuthoritativeSource(authoritativeSource);
 
         sessionData.getIdentityVerificationBundle()
             .getIdentityEvidence()
             .add(identityEvidence);
 
         mockBundleScores(sessionData, evidenceDto);
-        updateAttributesInSession(sessionData, identityEvidence);
+        attributeCollectionService.updateAttributesInSession(sessionData, identityEvidence);
 
         log.info(
             "Added new identity evidence {} for session {}",
@@ -63,32 +59,25 @@ public class EvidenceServiceImpl implements EvidenceService {
         var verificationBundle = new VerificationBundleDto(sessionData.getIdentityVerificationBundle());
         var calculateResponseDtoMono = gpg45Service.calculate(verificationBundle);
 
-        return calculateResponseDtoMono.flatMap(gpg45Response -> {
-            var bundle = gpg45Response.getIdentityVerificationBundle();
-            var profile = gpg45Response.getMatchedIdentityProfile();
-
-            sessionData.setIdentityProfile(profile);
-            sessionData.setIdentityVerificationBundle(bundle);
-            sessionService.saveSession(sessionData);
-
-            return Mono.just(SessionDataDto.fromSessionData(sessionData));
-        });
+        return calculateResponseDtoMono.flatMap(gpg45Response -> saveAndReturnSessionDto(gpg45Response, sessionData));
     }
 
-    private void updateAttributesInSession(SessionData sessionData, IdentityEvidence identityEvidence) {
-        var collectedAttributes = attributeCollectionService.collectAttributesFromEvidence(identityEvidence);
-        var currentAttributes = sessionData.getCollectedAttributes();
-        collectedAttributes.forEach((collectedAttributeName, collectedValue) -> {
-            var combined = currentAttributes.compute(collectedAttributeName, (currentAttribute, currentValue) -> {
-                // combine collected attribute values together
-                if (currentValue == null) {
-                    return collectedValue;
-                }
-                return Stream.concat(currentValue.stream(), collectedValue.stream()).collect(Collectors.toList());
-            });
+    private Mono<SessionDataDto> saveAndReturnSessionDto(CalculateResponseDto gpg45Response, SessionData sessionData) {
+        var bundle = gpg45Response.getIdentityVerificationBundle();
+        var profile = gpg45Response.getMatchedIdentityProfile();
 
-            currentAttributes.replace(collectedAttributeName, combined);
-        });
+        sessionData.setIdentityProfile(profile);
+        sessionData.setIdentityVerificationBundle(bundle);
+        sessionService.saveSession(sessionData);
+
+        return Mono.just(SessionDataDto.fromSessionData(sessionData));
+    }
+
+    private String getAuthoritativeSource(IdentityEvidence identityEvidence) {
+        if (identityEvidence.getType() == EvidenceType.UK_PASSPORT) {
+            return "urn:di:ipv:atp-dcs";
+        }
+        return "";
     }
 
     private void mockBundleScores(SessionData sessionData, EvidenceDto evidenceDto) {
