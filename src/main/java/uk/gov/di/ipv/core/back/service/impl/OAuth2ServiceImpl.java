@@ -20,10 +20,12 @@ import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import com.nimbusds.oauth2.sdk.AccessTokenResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
+import com.nimbusds.oauth2.sdk.AuthorizationErrorResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationSuccessResponse;
 import com.nimbusds.oauth2.sdk.ErrorObject;
 import com.nimbusds.oauth2.sdk.GrantType;
+import com.nimbusds.oauth2.sdk.OAuth2Error;
 import com.nimbusds.oauth2.sdk.TokenErrorResponse;
 import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.TokenResponse;
@@ -93,15 +95,15 @@ public class OAuth2ServiceImpl implements OAuth2Service {
         var responseMode = sessionData.getAuthData().getResponseMode();
         var providedClientId = sessionData.getAuthData().getClientID().getValue();
 
-//        if (!doesClientIdMatch(providedClientId)) {
-//            log.warn("Authorization request client id does not match this client id");
-//            return new AuthorizationErrorResponse(
-//                callback,
-//                OAuth2Error.ACCESS_DENIED,
-//                state,
-//                responseMode
-//            );
-//        }
+        if (!doesClientIdMatch(providedClientId)) {
+            log.warn("Authorization request client id does not match this client id");
+            return new AuthorizationErrorResponse(
+                callback,
+                OAuth2Error.ACCESS_DENIED,
+                state,
+                responseMode
+            );
+        }
 
         var code = new AuthorizationCode();
         sessionService.saveAuthCode(code, sessionData.getSessionId());
@@ -118,14 +120,14 @@ public class OAuth2ServiceImpl implements OAuth2Service {
     @Override
     public TokenResponse exchangeCodeForToken(final TokenRequest tokenRequest) throws JOSEException {
         log.info("This client id: {}, provided client id: {}", clientId.toString(), tokenRequest.getClientID().toString());
-//        if (!tokenRequest.getClientID().toString().equals(clientId.toString())) {
-//            log.warn("Token request client id does not match this client id");
-//            return new TokenErrorResponse(
-//                new ErrorObject(
-//                    OAuth2Error.ACCESS_DENIED_CODE,
-//                    "Client id does not match")
-//            );
-//        }
+        if (!tokenRequest.getClientID().toString().equals(clientId.toString())) {
+            log.warn("Token request client id does not match this client id");
+            return new TokenErrorResponse(
+                new ErrorObject(
+                    OAuth2Error.ACCESS_DENIED_CODE,
+                    "Client id does not match")
+            );
+        }
 
         if (!tokenRequest.getAuthorizationGrant().getType().equals(GrantType.AUTHORIZATION_CODE)) {
             return new TokenErrorResponse(
@@ -229,7 +231,7 @@ public class OAuth2ServiceImpl implements OAuth2Service {
             var attribute = AttributeName.fromString(additionalInfo);
 
             if (attribute == null) {
-                //TODO: Throw error
+                log.warn("Could not find requested attribute, `{}`", additionalInfo);
                 return;
             }
 
