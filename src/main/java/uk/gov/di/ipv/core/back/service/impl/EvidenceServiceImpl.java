@@ -10,7 +10,7 @@ import uk.gov.di.ipv.core.back.restapi.dto.CalculateResponseDto;
 import uk.gov.di.ipv.core.back.restapi.dto.EvidenceDto;
 import uk.gov.di.ipv.core.back.restapi.dto.SessionDataDto;
 import uk.gov.di.ipv.core.back.restapi.dto.VerificationBundleDto;
-import uk.gov.di.ipv.core.back.service.AttributeCollectionService;
+import uk.gov.di.ipv.core.back.service.AttributeService;
 import uk.gov.di.ipv.core.back.service.EvidenceService;
 import uk.gov.di.ipv.core.back.service.Gpg45Service;
 import uk.gov.di.ipv.core.back.service.SessionService;
@@ -21,16 +21,16 @@ public class EvidenceServiceImpl implements EvidenceService {
 
     private final Gpg45Service gpg45Service;
     private final SessionService sessionService;
-    private final AttributeCollectionService attributeCollectionService;
+    private final AttributeService attributeService;
 
     public EvidenceServiceImpl(
         Gpg45Service gpg45Service,
         SessionService sessionService,
-        AttributeCollectionService attributeCollectionService
+        AttributeService attributeService
     ) {
         this.gpg45Service = gpg45Service;
         this.sessionService = sessionService;
-        this.attributeCollectionService = attributeCollectionService;
+        this.attributeService = attributeService;
     }
 
     @Override
@@ -47,7 +47,7 @@ public class EvidenceServiceImpl implements EvidenceService {
             .add(identityEvidence);
 
         mockBundleScores(sessionData, evidenceDto);
-        attributeCollectionService.updateAttributesInSession(sessionData, identityEvidence);
+        attributeService.updateAttributesInSession(sessionData, identityEvidence);
 
         log.info(
             "Added new identity evidence {} for session {}",

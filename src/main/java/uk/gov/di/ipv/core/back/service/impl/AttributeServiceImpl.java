@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import uk.gov.di.ipv.core.back.domain.AttributeName;
 import uk.gov.di.ipv.core.back.domain.SessionData;
 import uk.gov.di.ipv.core.back.domain.data.IdentityEvidence;
-import uk.gov.di.ipv.core.back.service.AttributeCollectionService;
+import uk.gov.di.ipv.core.back.service.AttributeService;
 import uk.gov.di.ipv.core.back.util.ClaimsUtil;
 
 import java.util.ArrayList;
@@ -23,12 +23,12 @@ import java.util.stream.Stream;
 
 @Slf4j
 @Service
-public class AttributeCollectionServiceImpl implements AttributeCollectionService {
+public class AttributeServiceImpl implements AttributeService {
 
     private final ObjectMapper objectMapper;
 
     @Autowired
-    public AttributeCollectionServiceImpl(
+    public AttributeServiceImpl(
         final ObjectMapper objectMapper
     ) {
         this.objectMapper = objectMapper;

@@ -40,7 +40,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import uk.gov.di.ipv.core.back.domain.SessionData;
 import uk.gov.di.ipv.core.back.restapi.dto.UserInfoDto;
-import uk.gov.di.ipv.core.back.service.AttributeCollectionService;
+import uk.gov.di.ipv.core.back.service.AttributeService;
 import uk.gov.di.ipv.core.back.service.OAuth2Service;
 import uk.gov.di.ipv.core.back.service.SessionService;
 
@@ -64,7 +64,7 @@ public class OAuth2ServiceImpl implements OAuth2Service {
     private final Key signingKey;
     private final String signingCertThumbprint;
     private final SessionService sessionService;
-    private final AttributeCollectionService attributeCollectionService;
+    private final AttributeService attributeService;
     private final Certificate signingCert;
     private final ClientID clientId;
 
@@ -78,14 +78,14 @@ public class OAuth2ServiceImpl implements OAuth2Service {
         @Qualifier("ipv-signing-cert-thumbprint") String signingCertThumbprint,
         @Qualifier("ipv-signing-cert") Certificate signingCert,
         SessionService sessionService,
-        AttributeCollectionService attributeCollectionService
+        AttributeService attributeService
     ) {
         this.clientId = clientId;
         this.signingKey = signingKey;
         this.sessionService = sessionService;
         this.signingCertThumbprint = signingCertThumbprint;
         this.signingCert = signingCert;
-        this.attributeCollectionService = attributeCollectionService;
+        this.attributeService = attributeService;
     }
 
     @Override
@@ -198,7 +198,7 @@ public class OAuth2ServiceImpl implements OAuth2Service {
     private UserInfoDto createUserInfoResponse(SessionData sessionData) {
         var userInfo = getDefaultUserInfo(sessionData);
         var aggregatedAttributes =
-            attributeCollectionService.aggregateAttributes(sessionData);
+            attributeService.aggregateAttributes(sessionData);
         aggregatedAttributes.ifPresent(userInfo::putAll);
 
         return new UserInfoDto(userInfo);
