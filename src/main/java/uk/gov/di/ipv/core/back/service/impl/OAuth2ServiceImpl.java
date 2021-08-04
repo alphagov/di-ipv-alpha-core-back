@@ -33,18 +33,16 @@ import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
-import com.nimbusds.openid.connect.sdk.claims.ClaimsSetRequest;
 import lombok.extern.slf4j.Slf4j;
 import net.minidev.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import uk.gov.di.ipv.core.back.domain.AttributeName;
 import uk.gov.di.ipv.core.back.domain.SessionData;
 import uk.gov.di.ipv.core.back.restapi.dto.UserInfoDto;
+import uk.gov.di.ipv.core.back.service.AttributeCollectionService;
 import uk.gov.di.ipv.core.back.service.OAuth2Service;
 import uk.gov.di.ipv.core.back.service.SessionService;
-import uk.gov.di.ipv.core.back.util.ClaimsUtil;
 
 import java.security.Key;
 import java.security.PrivateKey;
@@ -57,7 +55,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -67,6 +64,7 @@ public class OAuth2ServiceImpl implements OAuth2Service {
     private final Key signingKey;
     private final String signingCertThumbprint;
     private final SessionService sessionService;
+    private final AttributeCollectionService attributeCollectionService;
     private final Certificate signingCert;
     private final ClientID clientId;
 
@@ -79,13 +77,15 @@ public class OAuth2ServiceImpl implements OAuth2Service {
         @Qualifier("ipv-signing-key") Key signingKey,
         @Qualifier("ipv-signing-cert-thumbprint") String signingCertThumbprint,
         @Qualifier("ipv-signing-cert") Certificate signingCert,
-        SessionService sessionService
+        SessionService sessionService,
+        AttributeCollectionService attributeCollectionService
     ) {
         this.clientId = clientId;
         this.signingKey = signingKey;
         this.sessionService = sessionService;
         this.signingCertThumbprint = signingCertThumbprint;
         this.signingCert = signingCert;
+        this.attributeCollectionService = attributeCollectionService;
     }
 
     @Override
@@ -197,7 +197,8 @@ public class OAuth2ServiceImpl implements OAuth2Service {
 
     private UserInfoDto createUserInfoResponse(SessionData sessionData) {
         var userInfo = getDefaultUserInfo(sessionData);
-        var aggregatedAttributes = aggregateAttributes(sessionData);
+        var aggregatedAttributes =
+            attributeCollectionService.aggregateAttributes(sessionData);
         aggregatedAttributes.ifPresent(userInfo::putAll);
 
         return new UserInfoDto(userInfo);
@@ -213,36 +214,6 @@ public class OAuth2ServiceImpl implements OAuth2Service {
         userInfo.put("requestedLevelOfConfidence", sessionData.getRequestedLevelOfConfidence().toString());
 
         return userInfo;
-    }
-
-    private Optional<Map<String, Object>> aggregateAttributes(SessionData sessionData) {
-        ClaimsSetRequest claimsSetRequest;
-
-        try {
-            claimsSetRequest = ClaimsUtil.getClaimsSetRequest(sessionData);
-        } catch (com.nimbusds.oauth2.sdk.ParseException parseException) {
-            log.error("Could not parse claims set request", parseException);
-            return Optional.empty();
-        }
-
-        var aggregatedAttributes = new HashMap<String, Object>();
-
-        claimsSetRequest.get("userinfo", null).getAdditionalInformation().forEach((additionalInfo, _val) -> {
-            var attribute = AttributeName.fromString(additionalInfo);
-
-            if (attribute == null) {
-                log.warn("Could not find requested attribute, `{}`", additionalInfo);
-                return;
-            }
-
-            var collectedAttributeValue = sessionData.getCollectedAttributes().get(attribute);
-            if (collectedAttributeValue != null && !collectedAttributeValue.isEmpty()) {
-                // /userinfo should only return populated attributes
-                aggregatedAttributes.put(attribute.toString(), sessionData.getCollectedAttributes().get(attribute));
-            }
-        });
-
-        return Optional.of(aggregatedAttributes);
     }
 
     private JSONObject createJwsPayload() {

@@ -18,12 +18,12 @@ public abstract class ClaimsUtil {
             .getAdditionalInformation();
 
 
-        if (!claimsMap.containsKey("level-of-confidence")) {
+        if (!claimsMap.containsKey("levelOfConfidence")) {
             // TODO: throw an error or set a default level of confidence?
             return ConfidenceLevel.HIGH;
         }
 
-        var data = (JSONObject) claimsMap.get("level-of-confidence");
+        var data = (JSONObject) claimsMap.get("levelOfConfidence");
         return ConfidenceLevel.fromString(data.get("value").toString());
     }
 }

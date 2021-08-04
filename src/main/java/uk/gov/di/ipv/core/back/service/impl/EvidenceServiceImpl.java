@@ -6,7 +6,6 @@ import reactor.core.publisher.Mono;
 import uk.gov.di.ipv.core.back.domain.SessionData;
 import uk.gov.di.ipv.core.back.domain.data.EvidenceType;
 import uk.gov.di.ipv.core.back.domain.data.IdentityEvidence;
-import uk.gov.di.ipv.core.back.domain.data.IdentityVerificationBundle;
 import uk.gov.di.ipv.core.back.restapi.dto.CalculateResponseDto;
 import uk.gov.di.ipv.core.back.restapi.dto.EvidenceDto;
 import uk.gov.di.ipv.core.back.restapi.dto.SessionDataDto;
