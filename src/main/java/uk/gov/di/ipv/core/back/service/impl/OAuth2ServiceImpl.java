@@ -40,6 +40,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import uk.gov.di.ipv.core.back.domain.SessionData;
 import uk.gov.di.ipv.core.back.restapi.dto.UserInfoDto;
+import uk.gov.di.ipv.core.back.service.AttributeService;
 import uk.gov.di.ipv.core.back.service.OAuth2Service;
 import uk.gov.di.ipv.core.back.service.SessionService;
 
@@ -51,7 +52,9 @@ import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -61,6 +64,7 @@ public class OAuth2ServiceImpl implements OAuth2Service {
     private final Key signingKey;
     private final String signingCertThumbprint;
     private final SessionService sessionService;
+    private final AttributeService attributeService;
     private final Certificate signingCert;
     private final ClientID clientId;
 
@@ -73,13 +77,15 @@ public class OAuth2ServiceImpl implements OAuth2Service {
         @Qualifier("ipv-signing-key") Key signingKey,
         @Qualifier("ipv-signing-cert-thumbprint") String signingCertThumbprint,
         @Qualifier("ipv-signing-cert") Certificate signingCert,
-        SessionService sessionService
+        SessionService sessionService,
+        AttributeService attributeService
     ) {
         this.clientId = clientId;
         this.signingKey = signingKey;
         this.sessionService = sessionService;
         this.signingCertThumbprint = signingCertThumbprint;
         this.signingCert = signingCert;
+        this.attributeService = attributeService;
     }
 
     @Override
@@ -89,15 +95,15 @@ public class OAuth2ServiceImpl implements OAuth2Service {
         var responseMode = sessionData.getAuthData().getResponseMode();
         var providedClientId = sessionData.getAuthData().getClientID().getValue();
 
-//        if (!doesClientIdMatch(providedClientId)) {
-//            log.warn("Authorization request client id does not match this client id");
-//            return new AuthorizationErrorResponse(
-//                callback,
-//                OAuth2Error.ACCESS_DENIED,
-//                state,
-//                responseMode
-//            );
-//        }
+        if (!doesClientIdMatch(providedClientId)) {
+            log.warn("Authorization request client id does not match this client id");
+            return new AuthorizationErrorResponse(
+                callback,
+                OAuth2Error.ACCESS_DENIED,
+                state,
+                responseMode
+            );
+        }
 
         var code = new AuthorizationCode();
         sessionService.saveAuthCode(code, sessionData.getSessionId());
@@ -114,14 +120,14 @@ public class OAuth2ServiceImpl implements OAuth2Service {
     @Override
     public TokenResponse exchangeCodeForToken(final TokenRequest tokenRequest) throws JOSEException {
         log.info("This client id: {}, provided client id: {}", clientId.toString(), tokenRequest.getClientID().toString());
-//        if (!tokenRequest.getClientID().toString().equals(clientId.toString())) {
-//            log.warn("Token request client id does not match this client id");
-//            return new TokenErrorResponse(
-//                new ErrorObject(
-//                    OAuth2Error.ACCESS_DENIED_CODE,
-//                    "Client id does not match")
-//            );
-//        }
+        if (!tokenRequest.getClientID().toString().equals(clientId.toString())) {
+            log.warn("Token request client id does not match this client id");
+            return new TokenErrorResponse(
+                new ErrorObject(
+                    OAuth2Error.ACCESS_DENIED_CODE,
+                    "Client id does not match")
+            );
+        }
 
         if (!tokenRequest.getAuthorizationGrant().getType().equals(GrantType.AUTHORIZATION_CODE)) {
             return new TokenErrorResponse(
@@ -190,13 +196,24 @@ public class OAuth2ServiceImpl implements OAuth2Service {
     }
 
     private UserInfoDto createUserInfoResponse(SessionData sessionData) {
-        return UserInfoDto.builder()
-            .issuer(issuerUrn)
-            .audience(orchestratorUrn)
-            .subject(orchestratorUrn)
-            .identityProfile(sessionData.getIdentityProfile())
-            .identityVerificationBundle(sessionData.getIdentityVerificationBundle())
-            .build();
+        var userInfo = getDefaultUserInfo(sessionData);
+        var aggregatedAttributes =
+            attributeService.aggregateAttributes(sessionData);
+        aggregatedAttributes.ifPresent(userInfo::putAll);
+
+        return new UserInfoDto(userInfo);
+    }
+
+    private Map<String, Object> getDefaultUserInfo(SessionData sessionData) {
+        var userInfo = new HashMap<String, Object>();
+
+        userInfo.put("iss", issuerUrn);
+        userInfo.put("aud", orchestratorUrn);
+        userInfo.put("sub", orchestratorUrn);
+        userInfo.put("identityProfile", sessionData.getIdentityProfile());
+        userInfo.put("requestedLevelOfConfidence", sessionData.getRequestedLevelOfConfidence().toString());
+
+        return userInfo;
     }
 
     private JSONObject createJwsPayload() {

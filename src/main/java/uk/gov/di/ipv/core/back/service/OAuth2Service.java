@@ -1,5 +1,6 @@
 package uk.gov.di.ipv.core.back.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.oauth2.sdk.AuthorizationResponse;
@@ -17,7 +18,7 @@ public interface OAuth2Service {
 
     TokenResponse exchangeCodeForToken(TokenRequest tokenRequest) throws JOSEException;
 
-    UserInfoDto handleUserInfo(AccessToken accessToken) throws ParseException;
+    UserInfoDto handleUserInfo(AccessToken accessToken) throws ParseException, JsonProcessingException;
 
     JWKSet getJwks();
 }

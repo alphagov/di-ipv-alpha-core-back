@@ -27,4 +27,13 @@ public enum ConfidenceLevel {
     public String toString() {
         return name;
     }
+
+    public static ConfidenceLevel fromString(String text) {
+        for (ConfidenceLevel confidenceLevel : ConfidenceLevel.values()) {
+            if (confidenceLevel.name.equals(text)) {
+                return confidenceLevel;
+            }
+        }
+        return null;
+    }
 }

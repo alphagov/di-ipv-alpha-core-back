@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.AuthorizationRequest;
+import com.nimbusds.oauth2.sdk.ParseException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -13,8 +14,10 @@ import uk.gov.di.ipv.core.back.domain.AuthData;
 import uk.gov.di.ipv.core.back.domain.SessionData;
 import uk.gov.di.ipv.core.back.domain.data.IdentityVerificationBundle;
 import uk.gov.di.ipv.core.back.service.SessionService;
+import uk.gov.di.ipv.core.back.util.ClaimsUtil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -61,7 +64,16 @@ public class SessionServiceImpl implements SessionService {
         authData.setScope(authorizationRequest.getScope());
         authData.setState(authorizationRequest.getState());
         authData.setResponseMode(authorizationRequest.getResponseMode());
+        authData.setRequestedAttributes(authorizationRequest.getCustomParameter("claims"));
         sessionData.setAuthData(authData);
+        sessionData.setCollectedAttributes(new HashMap<>());
+
+        try {
+            var requestedLevelOfConfidence = ClaimsUtil.getRequestedLevelOfConfidence(sessionData);
+            sessionData.setRequestedLevelOfConfidence(requestedLevelOfConfidence);
+        } catch (ParseException parseException) {
+            parseException.printStackTrace();
+        }
 
         return sessionData;
     }
