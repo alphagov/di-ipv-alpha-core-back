@@ -20,7 +20,7 @@ public class IdentityEvidence {
 
     public static IdentityEvidence fromDto(EvidenceDto dto) {
         return new IdentityEvidence(
-            dto.getEvidenceId(),
+            UUID.randomUUID(),
             dto.getType(),
             dto.getEvidenceData(),
             new ValidityCheck(),
