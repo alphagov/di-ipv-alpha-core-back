@@ -34,7 +34,7 @@ public class EvidenceServiceImpl implements EvidenceService {
     }
 
     @Override
-    public Mono<SessionDataDto> addEvidence(SessionData sessionData, EvidenceDto evidenceDto) {
+    public Mono<EvidenceDto> addEvidence(SessionData sessionData, EvidenceDto evidenceDto) {
         var identityEvidence = IdentityEvidence.fromDto(evidenceDto);
 
         log.info("Adding new evidence for session {}", sessionData.getSessionId());
@@ -57,8 +57,9 @@ public class EvidenceServiceImpl implements EvidenceService {
         log.info("Posting identity verification bundle to GPG45 for session {}", sessionData.getSessionId());
         var verificationBundle = new VerificationBundleDto(sessionData.getIdentityVerificationBundle());
         var calculateResponseDtoMono = gpg45Service.calculate(verificationBundle);
-
-        return calculateResponseDtoMono.flatMap(gpg45Response -> saveAndReturnSessionDto(gpg45Response, sessionData));
+        return calculateResponseDtoMono
+            .flatMap(gpg45Response -> saveAndReturnSessionDto(gpg45Response, sessionData))
+            .map(_sessionDataDto -> EvidenceDto.toDto(identityEvidence));
     }
 
     private Mono<SessionDataDto> saveAndReturnSessionDto(CalculateResponseDto gpg45Response, SessionData sessionData) {
