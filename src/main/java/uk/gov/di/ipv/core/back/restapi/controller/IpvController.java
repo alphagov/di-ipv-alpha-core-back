@@ -3,6 +3,7 @@ package uk.gov.di.ipv.core.back.restapi.controller;
 import com.nimbusds.oauth2.sdk.AuthorizationRequest;
 import com.nimbusds.oauth2.sdk.AuthorizationResponse;
 import com.nimbusds.oauth2.sdk.ParseException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -22,7 +23,9 @@ import uk.gov.di.ipv.core.back.service.RoutingService;
 import uk.gov.di.ipv.core.back.service.SessionService;
 
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/ipv")
 public class IpvController {
@@ -92,5 +95,31 @@ public class IpvController {
         var sessionDataDto = evidenceService.addEvidence(sessionData, evidenceDto);
 
         return sessionDataDto.map(ResponseEntity::ok);
+    }
+
+    @GetMapping("/{session-id}/evidence/{evidence-id}/delete")
+    public Mono<ResponseEntity<Void>> deleteEvidence(@PathVariable("session-id") UUID sessionId, @PathVariable("evidence-id") UUID evidenceId) {
+        var maybeSessionData = sessionService.getSession(sessionId);
+
+        if (maybeSessionData.isEmpty()) {
+            log.warn("Session data not found for session id {}", sessionId);
+            return Mono.just(ResponseEntity.notFound().build());
+        }
+
+        var sessionData = maybeSessionData.get();
+        var identityEvidence = sessionData
+            .getIdentityVerificationBundle()
+            .getIdentityEvidence()
+            .stream()
+            .filter(evidence -> evidence.getUuid().equals(evidenceId))
+            .collect(Collectors.toList());
+
+        if (identityEvidence.isEmpty()) {
+            log.warn("Identity evidence not found for evidence id {}", evidenceId);
+            return Mono.just(ResponseEntity.notFound().build());
+        }
+
+        var response = evidenceService.deleteEvidence(sessionData, identityEvidence.stream().findFirst().get());
+        return response.map(ResponseEntity::ok);
     }
 }

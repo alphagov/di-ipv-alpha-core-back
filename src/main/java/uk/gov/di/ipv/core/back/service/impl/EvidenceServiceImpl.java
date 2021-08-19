@@ -62,6 +62,17 @@ public class EvidenceServiceImpl implements EvidenceService {
             .map(_sessionDataDto -> EvidenceDto.toDto(identityEvidence));
     }
 
+    @Override
+    public Mono<Void> deleteEvidence(SessionData sessionData, IdentityEvidence identityEvidence) {
+        sessionData.getIdentityVerificationBundle().getIdentityEvidence().remove(identityEvidence);
+
+        var verificationBundle = new VerificationBundleDto(sessionData.getIdentityVerificationBundle());
+        var calculateResponseDtoMono = gpg45Service.calculate(verificationBundle);
+        return calculateResponseDtoMono
+            .flatMap(gpg45Response -> saveAndReturnSessionDto(gpg45Response, sessionData))
+            .then();
+    }
+
     private Mono<SessionDataDto> saveAndReturnSessionDto(CalculateResponseDto gpg45Response, SessionData sessionData) {
         var bundle = gpg45Response.getIdentityVerificationBundle();
         var profile = gpg45Response.getMatchedIdentityProfile();
