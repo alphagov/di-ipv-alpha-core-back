@@ -24,7 +24,7 @@ public class IdentityEvidence {
             dto.getType(),
             dto.getEvidenceData(),
             new ValidityCheck(),
-            null
+            dto.getEvidenceScore()
         );
     }
 }
