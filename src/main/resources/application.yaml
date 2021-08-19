@@ -11,7 +11,7 @@ gpg45:
 
 logging:
   level:
-    root: DEBUG
+    root: INFO
 
 server:
   port: ${PORT:8081}
