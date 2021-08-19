@@ -81,7 +81,7 @@ public class IpvController {
     }
 
     @PostMapping("/{session-id}/add-evidence")
-    public Mono<ResponseEntity<SessionDataDto>> addEvidence(@PathVariable("session-id") UUID sessionId, @RequestBody EvidenceDto evidenceDto) {
+    public Mono<ResponseEntity<EvidenceDto>> addEvidence(@PathVariable("session-id") UUID sessionId, @RequestBody EvidenceDto evidenceDto) {
         var maybeSessionData = sessionService.getSession(sessionId);
 
         if (maybeSessionData.isEmpty()) {
