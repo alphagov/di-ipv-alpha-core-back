@@ -65,6 +65,7 @@ public class IpvController {
         var maybeSessionData = sessionService.getSession(sessionId);
 
         if (maybeSessionData.isEmpty()) {
+            log.warn("Session data not found for session id {}", sessionId);
             return Mono.just(ResponseEntity.notFound().build());
         }
 
@@ -83,6 +84,24 @@ public class IpvController {
             .map(ResponseEntity::ok);
     }
 
+    @GetMapping("/{session-id}/session")
+    public Mono<ResponseEntity<SessionDataDto>> getSessionData(@PathVariable("session-id") UUID sessionId) {
+        var maybeSessionData = sessionService.getSession(sessionId);
+
+        if (maybeSessionData.isEmpty()) {
+            log.warn("Session data not found for session id {}", sessionId);
+            return Mono.just(ResponseEntity.notFound().build());
+        }
+
+        var sessionData = maybeSessionData.get();
+        var dto =  SessionDataDto.fromSessionData(sessionData);
+
+        log.info("Found session data, returning session data for id {}", sessionId);
+
+        return Mono.just(dto)
+            .map(ResponseEntity::ok);
+    }
+
     @PostMapping("/{session-id}/add-evidence")
     public Mono<ResponseEntity<EvidenceDto>> addEvidence(@PathVariable("session-id") UUID sessionId, @RequestBody EvidenceDto evidenceDto) {
         var maybeSessionData = sessionService.getSession(sessionId);
@@ -92,9 +111,12 @@ public class IpvController {
         }
 
         var sessionData = maybeSessionData.get();
-        var sessionDataDto = evidenceService.addEvidence(sessionData, evidenceDto);
-
-        return sessionDataDto.map(ResponseEntity::ok);
+        var evidenceDtoMono = evidenceService.addEvidence(sessionData, evidenceDto)
+                .doOnSuccess(evidence ->
+                    log.info("Evidence data added with the id {} for session {}",
+                        evidence.getEvidenceId(),
+                        sessionId));
+        return evidenceDtoMono.map(ResponseEntity::ok);
     }
 
     @GetMapping("/{session-id}/evidence/{evidence-id}/delete")
@@ -118,6 +140,8 @@ public class IpvController {
             log.warn("Identity evidence not found for evidence id {}", evidenceId);
             return Mono.just(ResponseEntity.notFound().build());
         }
+
+        log.info("Identity evidence {} was deleted from session {}", evidenceId, sessionId);
 
         var response = evidenceService.deleteEvidence(sessionData, identityEvidence.stream().findFirst().get());
         return response.map(ResponseEntity::ok);
