@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 import uk.gov.di.ipv.core.back.restapi.dto.ActivityHistoryDto;
 import uk.gov.di.ipv.core.back.restapi.dto.EvidenceDto;
+import uk.gov.di.ipv.core.back.restapi.dto.FraudCheckDto;
 import uk.gov.di.ipv.core.back.restapi.dto.IdentityVerificationDto;
 import uk.gov.di.ipv.core.back.restapi.dto.RouteDto;
 import uk.gov.di.ipv.core.back.restapi.dto.SessionDataDto;
@@ -162,7 +163,7 @@ public class IpvController {
     }
 
     @PostMapping("/{session-id}/add-fraud-check")
-    public Mono<ResponseEntity<EvidenceDto>> addFraudCheck(@PathVariable("session-id") UUID sessionId, @RequestBody EvidenceDto evidenceDto) {
+    public Mono<ResponseEntity<FraudCheckDto>> addFraudCheck(@PathVariable("session-id") UUID sessionId, @RequestBody FraudCheckDto fraudCheckDto) {
         var maybeSessionData = sessionService.getSession(sessionId);
 
         if (maybeSessionData.isEmpty()) {
