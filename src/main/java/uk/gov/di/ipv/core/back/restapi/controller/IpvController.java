@@ -14,10 +14,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
+import uk.gov.di.ipv.core.back.restapi.dto.ActivityHistoryDto;
 import uk.gov.di.ipv.core.back.restapi.dto.EvidenceDto;
 import uk.gov.di.ipv.core.back.restapi.dto.IdentityVerificationDto;
 import uk.gov.di.ipv.core.back.restapi.dto.RouteDto;
 import uk.gov.di.ipv.core.back.restapi.dto.SessionDataDto;
+import uk.gov.di.ipv.core.back.service.ActivityHistoryService;
 import uk.gov.di.ipv.core.back.service.EvidenceService;
 import uk.gov.di.ipv.core.back.service.OAuth2Service;
 import uk.gov.di.ipv.core.back.service.RoutingService;
@@ -37,6 +39,7 @@ public class IpvController {
     private final EvidenceService evidenceService;
     private final OAuth2Service oAuth2Service;
     private final VerificationService verificationService;
+    private final ActivityHistoryService activityHistoryService;
 
     @Autowired
     public IpvController(
@@ -44,13 +47,15 @@ public class IpvController {
         RoutingService routingService,
         EvidenceService evidenceService,
         OAuth2Service oAuth2Service,
-        VerificationService verificationService
+        VerificationService verificationService,
+        ActivityHistoryService activityHistoryService
     ) {
         this.sessionService = sessionService;
         this.routingService = routingService;
         this.evidenceService = evidenceService;
         this.oAuth2Service = oAuth2Service;
         this.verificationService = verificationService;
+        this.activityHistoryService = activityHistoryService;
     }
 
     @GetMapping("/start-session")
@@ -142,7 +147,7 @@ public class IpvController {
     }
 
     @PostMapping("/{session-id}/add-activity-history")
-    public Mono<ResponseEntity<EvidenceDto>> addActivityHistory(@PathVariable("session-id") UUID sessionId, @RequestBody EvidenceDto evidenceDto) {
+    public Mono<ResponseEntity<ActivityHistoryDto>> addActivityHistory(@PathVariable("session-id") UUID sessionId, @RequestBody ActivityHistoryDto activityHistoryDto) {
         var maybeSessionData = sessionService.getSession(sessionId);
 
         if (maybeSessionData.isEmpty()) {
@@ -150,8 +155,10 @@ public class IpvController {
         }
 
         var sessionData = maybeSessionData.get();
+        var responseDto = activityHistoryService.processActivityHistory(activityHistoryDto, sessionData);
 
-        return null;
+        return responseDto
+            .map(ResponseEntity::ok);
     }
 
     @PostMapping("/{session-id}/add-fraud-check")
