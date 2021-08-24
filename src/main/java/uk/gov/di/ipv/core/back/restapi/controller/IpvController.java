@@ -133,6 +133,8 @@ public class IpvController {
         }
 
         var sessionData = maybeSessionData.get();
+
+        log.info("Adding identity verification data");
         var responseDto = verificationService.processVerification(verificationDto, sessionData);
 
         return responseDto

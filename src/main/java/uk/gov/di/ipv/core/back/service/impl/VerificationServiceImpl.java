@@ -1,5 +1,6 @@
 package uk.gov.di.ipv.core.back.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import uk.gov.di.ipv.core.back.domain.SessionData;
@@ -10,6 +11,7 @@ import uk.gov.di.ipv.core.back.service.Gpg45Service;
 import uk.gov.di.ipv.core.back.service.SessionService;
 import uk.gov.di.ipv.core.back.service.VerificationService;
 
+@Slf4j
 @Service
 public class VerificationServiceImpl implements VerificationService {
 
@@ -40,12 +42,14 @@ public class VerificationServiceImpl implements VerificationService {
                 break;
         }
 
+        log.info("Set a score of {} for identity verification", score);
         identityVerificationDto.setVerificationScore(score);
         sessionData.getIdentityVerificationBundle()
             .getBundleScores()
             .setIdentityVerificationScore(score);
 
         var verificationBundle = new VerificationBundleDto(sessionData.getIdentityVerificationBundle());
+        log.info("Sending and saving bundle to gpg45");
         return gpg45Service.calculate(verificationBundle)
             .map(response -> sessionService.saveAndReturnSessionDto(response, sessionData))
             .map(_sessionData -> identityVerificationDto);
