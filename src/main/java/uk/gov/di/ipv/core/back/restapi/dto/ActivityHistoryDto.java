@@ -7,7 +7,7 @@ import uk.gov.di.ipv.core.back.domain.gpg45.Score;
 @Data
 public class ActivityHistoryDto {
 
-    private Object activityHistory;
+    private Object activityHistoryData;
 
     private Score activityHistoryScore;
 }
