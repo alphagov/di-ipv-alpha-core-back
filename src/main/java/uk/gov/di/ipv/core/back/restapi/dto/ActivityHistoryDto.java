@@ -7,8 +7,7 @@ import uk.gov.di.ipv.core.back.domain.gpg45.Score;
 @Data
 public class ActivityHistoryDto {
 
-    private VerificationType type;
-    private Object verificationData;
+    private Object activityHistory;
 
-    private Score verificationScore;
+    private Score activityHistoryScore;
 }
