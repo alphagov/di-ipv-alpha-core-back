@@ -29,7 +29,7 @@ public class ActivityHistoryServiceImpl implements ActivityHistoryService {
 
     @Override
     public Mono<ActivityHistoryDto> processActivityHistory(ActivityHistoryDto activityHistoryDto, SessionData sessionData) {
-        var score = activityHistoryDto.getVerificationScore();
+        var score = activityHistoryDto.getActivityHistoryScore();
 
         if (score == null) {
             score = Score.NOT_AVAILABLE;
