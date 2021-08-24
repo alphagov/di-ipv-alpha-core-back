@@ -6,9 +6,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.di.ipv.core.back.domain.SessionData;
 import uk.gov.di.ipv.core.back.domain.data.EvidenceType;
 import uk.gov.di.ipv.core.back.domain.data.IdentityEvidence;
-import uk.gov.di.ipv.core.back.restapi.dto.CalculateResponseDto;
 import uk.gov.di.ipv.core.back.restapi.dto.EvidenceDto;
-import uk.gov.di.ipv.core.back.restapi.dto.SessionDataDto;
 import uk.gov.di.ipv.core.back.restapi.dto.VerificationBundleDto;
 import uk.gov.di.ipv.core.back.service.AttributeService;
 import uk.gov.di.ipv.core.back.service.EvidenceService;
@@ -58,7 +56,7 @@ public class EvidenceServiceImpl implements EvidenceService {
         var verificationBundle = new VerificationBundleDto(sessionData.getIdentityVerificationBundle());
         var calculateResponseDtoMono = gpg45Service.calculate(verificationBundle);
         return calculateResponseDtoMono
-            .flatMap(gpg45Response -> saveAndReturnSessionDto(gpg45Response, sessionData))
+            .flatMap(gpg45Response -> sessionService.saveAndReturnSessionDto(gpg45Response, sessionData))
             .map(_sessionDataDto -> EvidenceDto.toDto(identityEvidence));
     }
 
@@ -69,19 +67,8 @@ public class EvidenceServiceImpl implements EvidenceService {
         var verificationBundle = new VerificationBundleDto(sessionData.getIdentityVerificationBundle());
         var calculateResponseDtoMono = gpg45Service.calculate(verificationBundle);
         return calculateResponseDtoMono
-            .flatMap(gpg45Response -> saveAndReturnSessionDto(gpg45Response, sessionData))
+            .flatMap(gpg45Response -> sessionService.saveAndReturnSessionDto(gpg45Response, sessionData))
             .then();
-    }
-
-    private Mono<SessionDataDto> saveAndReturnSessionDto(CalculateResponseDto gpg45Response, SessionData sessionData) {
-        var bundle = gpg45Response.getIdentityVerificationBundle();
-        var profile = gpg45Response.getMatchedIdentityProfile();
-
-        sessionData.setIdentityProfile(profile);
-        sessionData.setIdentityVerificationBundle(bundle);
-        sessionService.saveSession(sessionData);
-
-        return Mono.just(SessionDataDto.fromSessionData(sessionData));
     }
 
     private String getAuthoritativeSource(IdentityEvidence identityEvidence) {

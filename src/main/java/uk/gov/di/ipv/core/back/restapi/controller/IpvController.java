@@ -15,12 +15,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 import uk.gov.di.ipv.core.back.restapi.dto.EvidenceDto;
+import uk.gov.di.ipv.core.back.restapi.dto.IdentityVerificationDto;
 import uk.gov.di.ipv.core.back.restapi.dto.RouteDto;
 import uk.gov.di.ipv.core.back.restapi.dto.SessionDataDto;
 import uk.gov.di.ipv.core.back.service.EvidenceService;
 import uk.gov.di.ipv.core.back.service.OAuth2Service;
 import uk.gov.di.ipv.core.back.service.RoutingService;
 import uk.gov.di.ipv.core.back.service.SessionService;
+import uk.gov.di.ipv.core.back.service.VerificationService;
 
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -34,18 +36,21 @@ public class IpvController {
     private final RoutingService routingService;
     private final EvidenceService evidenceService;
     private final OAuth2Service oAuth2Service;
+    private final VerificationService verificationService;
 
     @Autowired
     public IpvController(
         SessionService sessionService,
         RoutingService routingService,
         EvidenceService evidenceService,
-        OAuth2Service oAuth2Service
+        OAuth2Service oAuth2Service,
+        VerificationService verificationService
     ) {
         this.sessionService = sessionService;
         this.routingService = routingService;
         this.evidenceService = evidenceService;
         this.oAuth2Service = oAuth2Service;
+        this.verificationService = verificationService;
     }
 
     @GetMapping("/start-session")
@@ -117,6 +122,49 @@ public class IpvController {
                         evidence.getEvidenceId(),
                         sessionId));
         return evidenceDtoMono.map(ResponseEntity::ok);
+    }
+
+    @PostMapping("/{session-id}/add-identity-verification")
+    public Mono<ResponseEntity<IdentityVerificationDto>> addIdentityVerification(@PathVariable("session-id") UUID sessionId, @RequestBody IdentityVerificationDto verificationDto) {
+        var maybeSessionData = sessionService.getSession(sessionId);
+
+        if (maybeSessionData.isEmpty()) {
+            return Mono.just(ResponseEntity.notFound().build());
+        }
+
+        var sessionData = maybeSessionData.get();
+
+        log.info("Adding identity verification data");
+        var responseDto = verificationService.processVerification(verificationDto, sessionData);
+
+        return responseDto
+            .map(ResponseEntity::ok);
+    }
+
+    @PostMapping("/{session-id}/add-activity-history")
+    public Mono<ResponseEntity<EvidenceDto>> addActivityHistory(@PathVariable("session-id") UUID sessionId, @RequestBody EvidenceDto evidenceDto) {
+        var maybeSessionData = sessionService.getSession(sessionId);
+
+        if (maybeSessionData.isEmpty()) {
+            return Mono.just(ResponseEntity.notFound().build());
+        }
+
+        var sessionData = maybeSessionData.get();
+
+        return null;
+    }
+
+    @PostMapping("/{session-id}/add-fraud-check")
+    public Mono<ResponseEntity<EvidenceDto>> addFraudCheck(@PathVariable("session-id") UUID sessionId, @RequestBody EvidenceDto evidenceDto) {
+        var maybeSessionData = sessionService.getSession(sessionId);
+
+        if (maybeSessionData.isEmpty()) {
+            return Mono.just(ResponseEntity.notFound().build());
+        }
+
+        var sessionData = maybeSessionData.get();
+
+        return null;
     }
 
     @GetMapping("/{session-id}/evidence/{evidence-id}/delete")

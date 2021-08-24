@@ -9,10 +9,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 import redis.clients.jedis.Jedis;
 import uk.gov.di.ipv.core.back.domain.AuthData;
 import uk.gov.di.ipv.core.back.domain.SessionData;
 import uk.gov.di.ipv.core.back.domain.data.IdentityVerificationBundle;
+import uk.gov.di.ipv.core.back.restapi.dto.CalculateResponseDto;
+import uk.gov.di.ipv.core.back.restapi.dto.SessionDataDto;
 import uk.gov.di.ipv.core.back.service.SessionService;
 import uk.gov.di.ipv.core.back.util.ClaimsUtil;
 
@@ -131,6 +134,18 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public SessionData getSessionDataFromAccessToken(String accessToken) {
         return deserializeSessionData(redisClient.get(accessToken));
+    }
+
+    @Override
+    public Mono<SessionDataDto> saveAndReturnSessionDto(CalculateResponseDto gpg45Response, SessionData sessionData) {
+        var bundle = gpg45Response.getIdentityVerificationBundle();
+        var profile = gpg45Response.getMatchedIdentityProfile();
+
+        sessionData.setIdentityProfile(profile);
+        sessionData.setIdentityVerificationBundle(bundle);
+        saveSession(sessionData);
+
+        return Mono.just(SessionDataDto.fromSessionData(sessionData));
     }
 
     private String serializeSessionData(SessionData sessionData) {
