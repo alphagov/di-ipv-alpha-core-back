@@ -26,6 +26,7 @@ import uk.gov.di.ipv.core.back.service.OAuth2Service;
 import uk.gov.di.ipv.core.back.service.RoutingService;
 import uk.gov.di.ipv.core.back.service.SessionService;
 import uk.gov.di.ipv.core.back.service.VerificationService;
+import uk.gov.di.ipv.core.back.service.FraudService;
 
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -41,6 +42,7 @@ public class IpvController {
     private final OAuth2Service oAuth2Service;
     private final VerificationService verificationService;
     private final ActivityHistoryService activityHistoryService;
+    private final FraudService fraudService;
 
     @Autowired
     public IpvController(
@@ -49,7 +51,8 @@ public class IpvController {
         EvidenceService evidenceService,
         OAuth2Service oAuth2Service,
         VerificationService verificationService,
-        ActivityHistoryService activityHistoryService
+        ActivityHistoryService activityHistoryService,
+        FraudService fraudService
     ) {
         this.sessionService = sessionService;
         this.routingService = routingService;
@@ -57,6 +60,7 @@ public class IpvController {
         this.oAuth2Service = oAuth2Service;
         this.verificationService = verificationService;
         this.activityHistoryService = activityHistoryService;
+        this.fraudService = fraudService;
     }
 
     @GetMapping("/start-session")
@@ -172,7 +176,10 @@ public class IpvController {
 
         var sessionData = maybeSessionData.get();
 
-        return null;
+        var monoFraudCheckDto = fraudService.processFraudCheck(fraudCheckDto, sessionData);
+
+        return monoFraudCheckDto
+            .map(ResponseEntity::ok);
     }
 
     @GetMapping("/{session-id}/evidence/{evidence-id}/delete")
