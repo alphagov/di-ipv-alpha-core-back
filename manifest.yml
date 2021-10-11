@@ -1,6 +1,6 @@
 ---
 applications:
-  - name: di-ipv-core-back
+  - name: di-ipv-alpha-core-back
     path: build/libs/ipv-core-back-0.0.1-SNAPSHOT.jar
     memory: 256M
     buildpack: java_buildpack
